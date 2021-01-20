@@ -17,26 +17,27 @@
                            IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings, &
                            IRangeLinLadders,IRangeQuadLadders,IRangeDirectLadders,IRangeExchangeLadders)
       Implicit None
-      Integer,        Intent(Out) :: NOcc, NAO
-      Logical,        Intent(Out) :: DoRing, DoXRing, DoLadder, DoMosaic
-      Integer,        Intent(Out) :: IRangeRing, IRangeXRing, IRangeLadder, IRangeMosaic
-      Integer,        Intent(Out) :: IRangeDriverDirect, IRangeDriverExchange, IRangeEnergy
-      Integer,        Intent(Out) :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings  
-      Integer,        Intent(Out) :: IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders
-      Real (Kind=pr), Intent(Out) :: Rs
-      Integer, Parameter    :: NParams = 22
-      Integer, Parameter    :: LName   = 19
-      Integer, Parameter    :: LLine   = 79
-      Integer               :: NElectron
-      Logical               :: Error, Exists
-      Character (len=5)     :: FormatString
-      Character (len=LLine) :: Line, KeyWord, Value
-      Character (len=LName) :: ParamName(NParams)
-      Logical               :: SetOnce(NParams), SetTwice(NParams)
-      Integer :: I, ExStatus, LineNumber
-      Integer :: MaxKPoint
+      type :: Input_Param
+         Integer,        Intent(Out) :: NOcc, NAO
+         Logical,        Intent(Out) :: DoRing, DoXRing, DoLadder, DoMosaic
+         Integer,        Intent(Out) :: IRangeRing, IRangeXRing, IRangeLadder, IRangeMosaic
+         Integer,        Intent(Out) :: IRangeDriverDirect, IRangeDriverExchange, IRangeEnergy
+         Integer,        Intent(Out) :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings  
+         Integer,        Intent(Out) :: IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders
+         Real (Kind=pr), Intent(Out) :: Rs
+         Integer, Parameter    :: NParams = 22
+         Integer, Parameter    :: LName   = 19
+         Integer, Parameter    :: LLine   = 79
+         Integer               :: NElectron
+         Logical               :: Error, Exists
+         Character (len=5)     :: FormatString
+         Character (len=LLine) :: Line, KeyWord, Value
+         Character (len=LName) :: ParamName(NParams)
+         Logical               :: SetOnce(NParams), SetTwice(NParams)
+         Integer :: I, ExStatus, LineNumber
+         Integer :: MaxKPoint
       !!!Real (Kind=pr) :: rS
-
+      end type
 !=====================================================================!
 !  This is a pretty complicated subroutine for me, as I know little   !
 !  about string-handling.  But here's what everything does.           !
@@ -132,81 +133,82 @@
          SetOnce(I) = .True.
         End If
        End Do
-
+       
+       type(Input_Param) :: Inp
        Select Case (Trim(AdjustL(Keyword)))     !  Setting the variables...
         Case ('SKIP')
 
         Case ('# Electrons')
          Read(Value,*) NElectron
-         NOcc = NElectron/2
+         Inp%NOcc = NElectron/2
          If(NElectron < 0)         Stop 'Must have positive number of electrons'
          If(Mod(NElectron,2) == 1) Stop 'Must have closed shell'
 
         Case ('Momentum Cutoff')
-         Read(Value,*) MaxKPoint
+         Read(Value,*) Inp%MaxKPoint
 
         Case ('Rs')
-         Read(Value,*) Rs
+         Read(Value,*) Inp%Rs
 !!
 !!        Case ('# rS Points')
 !!         Read(Value,*) NumRSPoints
 
         Case ('Do Rings')
-         Read(Value,*) DoRing
+         Read(Value,*) Inp%DoRing
 
         Case ('Do XRings')
-         Read(Value,*) DoXRing
+         Read(Value,*) Inp%DoXRing
 
         Case ('Do Ladders')
-         Read(Value,*) DoLadder
+         Read(Value,*) Inp%DoLadder
 
         Case ('Do Mosaics')
-         Read(Value,*) DoMosaic
+         Read(Value,*) Inp%DoMosaic
 
         Case ('Rings Range')
-         Read(Value,*) IRangeRing
+         Read(Value,*) Inp%IRangeRing
 
         Case ('XRings Range')
-         Read(Value,*) IRangeXRing
+         Read(Value,*) Inp%IRangeXRing
 
         Case ('Ladders Range')
-         Read(Value,*) IRangeLadder
+         Read(Value,*) Inp%IRangeLadder
 
         Case ('Mosaics Range')
-         Read(Value,*) IRangeMosaic
+         Read(Value,*) Inp%IRangeMosaic
 
         Case ('DriverDir Range') ! this implicitly sets the driver
-         Read(Value,*) IRangeDriverDirect
+         Read(Value,*) Inp%IRangeDriverDirect
 
         Case ('DriverEx Range') ! this implicitly sets the driver
-         Read(Value,*) IRangeDriverExchange
+         Read(Value,*) Inp%IRangeDriverExchange
 
         Case ('Energy Range') ! for the energy expression
-         Read(Value,*) IRangeEnergy
+         Read(Value,*) Inp%IRangeEnergy
 
         Case ('LinRings Range') ! for the linear rings and cross rings
-         Read(Value,*) IRangeLinRings
+         Read(Value,*) Inp%IRangeLinRings
 
         Case ('QuadRings Range') ! for the quadratic rings and cross rings
-         Read(Value,*) IRangeQuadRings
+         Read(Value,*) Inp%IRangeQuadRings
         
         Case ('DRings Range') ! for the dRPA terms
-         Read(Value,*) IRangeDirectRings
+         Read(Value,*) Inp%IRangeDirectRings
 
         Case ('ExRings Range') ! for the RPAX terms
-         Read(Value,*) IRangeExchangeRings
+         Read(Value,*) Inp%IRangeExchangeRings
 
         Case ('LinLadd Range') ! for the linear ladders
-         Read(Value,*) IRangeLinLadders
+         Read(Value,*) Inp%IRangeLinLadders
 
         Case ('QuadLadd Range') ! for the quadratic ladders
-         Read(Value,*) IRangeQuadLadders
+         Read(Value,*) Inp%IRangeQuadLadders
         
         Case ('DLadders Range') ! by analogy to rings 
-         Read(Value,*) IRangeDirectLadders
+         Read(Value,*) Inp%IRangeDirectLadders
 
         Case ('ExLadders Range') ! by analogy to rings
-         Read(Value,*) IRangeExchangeLadders
+         Read(Value,*) Inp%IRangeExchangeLadders
 
 
         Case Default   !  Unknown keyword
