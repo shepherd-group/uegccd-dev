@@ -32,12 +32,7 @@
 !  basic information for the calculation.  !
 !==========================================!
 
-      Call ReadInput(NOcc,NAO,Rs,           &
-                     DoRing,DoXRing,DoLadder,DoMosaic,       &
-                     IRangeRing,IRangeXRing,IRangeLadder,IRangeMosaic, &
-                     IRangeDriverDirect,IRangeDriverExchange,IRangeEnergy,                       &
-                     IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings, &
-                     IRangeLinLadders,IRangeQuadLadders,IRangeDirectLadders,IRangeExchangeLadders)
+      Call ReadInput(UEG_Inp)
 
 
 !==========================================!

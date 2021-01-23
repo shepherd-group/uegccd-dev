@@ -7,37 +7,47 @@
    Implicit None
    Private
    Public  :: ReadInput
+   type UEG_input   !! derived type for the inputs from the file "Input"
+        Integer :: NOcc
+        Integer :: NAO
+        Real (Kind=pr) :: Rs
+        Logical :: DoRing
+        Logical :: DoXRing
+        Logical :: DoLadder
+        Logical :: DoMosaic
+        Integer :: IRangeRing
+        Integer :: IRangeXRing
+        Integer :: IRangeLadder
+        Integer :: IRangeMosaic
+        Integer :: IRangeDriverDirect
+        Integer :: IRangeDriverExchange
+        Integer :: IRangeEnergy
+        Integer :: IRangeLinRings
+        Integer :: IRangeQuadRings
+        Integer :: IRangeDirectRings
+        Integer :: IRangeExchangeRings
+        Integer :: IRangeLinLadders
+        Integer :: IRangeQuadLadders
+        Integer :: IRangeDirectLadders
+        Integer :: IRangeExchangeLadders
+        Integer :: NElectron
+        Integer :: MaxKPoint
+   end type UEG_input
 
    Contains
-
-      Subroutine ReadInput(NOcc,NAO,Rs,     &
-                           DoRing,DoXRing,DoLadder,DoMosaic,     &
-                           IRangeRing,IRangeXRing,IRangeLadder,IRangeMosaic, &
-                           IRangeDriverDirect,IRangeDriverExchange,IRangeEnergy,                       &
-                           IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings, &
-                           IRangeLinLadders,IRangeQuadLadders,IRangeDirectLadders,IRangeExchangeLadders)
+      Subroutine ReadInput(UEG_Inp)
       Implicit None
-      type :: Input_Param
-         Integer,        Intent(Out) :: NOcc, NAO
-         Logical,        Intent(Out) :: DoRing, DoXRing, DoLadder, DoMosaic
-         Integer,        Intent(Out) :: IRangeRing, IRangeXRing, IRangeLadder, IRangeMosaic
-         Integer,        Intent(Out) :: IRangeDriverDirect, IRangeDriverExchange, IRangeEnergy
-         Integer,        Intent(Out) :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings  
-         Integer,        Intent(Out) :: IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders
-         Real (Kind=pr), Intent(Out) :: Rs
-         Integer, Parameter    :: NParams = 22
-         Integer, Parameter    :: LName   = 19
-         Integer, Parameter    :: LLine   = 79
-         Integer               :: NElectron
-         Logical               :: Error, Exists
-         Character (len=5)     :: FormatString
-         Character (len=LLine) :: Line, KeyWord, Value
-         Character (len=LName) :: ParamName(NParams)
-         Logical               :: SetOnce(NParams), SetTwice(NParams)
-         Integer :: I, ExStatus, LineNumber
-         Integer :: MaxKPoint
-      !!!Real (Kind=pr) :: rS
-      end type
+      !!Integer, Parameteonrams = 22
+      Integer, Parameter    :: NParams = 22
+      Integer, Parameter    :: LName   = 19
+      Integer, Parameter    :: LLine   = 79
+      Logical               :: Error, Exists
+      Character (len=5)     :: FormatString
+      Character (len=LLine) :: Line, KeyWord, Value
+      Character (len=LName) :: ParamName(NParams)
+      Logical               :: SetOnce(NParams), SetTwice(NParams)
+      Integer :: I, ExStatus, LineNumber
+      type(UEG_Input), Intent(Inout) :: UEG_Inp  !!calls on the dervied type defined above 
 !=====================================================================!
 !  This is a pretty complicated subroutine for me, as I know little   !
 !  about string-handling.  But here's what everything does.           !
@@ -88,7 +98,6 @@
       SetOnce  = .False.
       SetTwice = .False.
       ParamName = (/'# Electrons        ',    &
-                   !! '# rS Points        ',    &
                     'Momentum Cutoff    ',    &
                     'Rs                 ',    &
                     'Do Rings           ',    &
@@ -134,81 +143,80 @@
         End If
        End Do
        
-       type(Input_Param) :: Inp
        Select Case (Trim(AdjustL(Keyword)))     !  Setting the variables...
         Case ('SKIP')
 
         Case ('# Electrons')
-         Read(Value,*) NElectron
-         Inp%NOcc = NElectron/2
-         If(NElectron < 0)         Stop 'Must have positive number of electrons'
-         If(Mod(NElectron,2) == 1) Stop 'Must have closed shell'
+         Read(Value,*) UEG_Inp%NElectron
+         UEG_Inp%NOcc = UEG_Inp%NElectron/2
+         If(UEG_Inp%NElectron < 0)         Stop 'Must have positive number of electrons'
+         If(Mod(UEG_Inp%NElectron,2) == 1) Stop 'Must have closed shell'
 
         Case ('Momentum Cutoff')
-         Read(Value,*) Inp%MaxKPoint
+         Read(Value,*) UEG_Inp%MaxKPoint
 
         Case ('Rs')
-         Read(Value,*) Inp%Rs
+         Read(Value,*) UEG_Inp%Rs
 !!
 !!        Case ('# rS Points')
 !!         Read(Value,*) NumRSPoints
 
         Case ('Do Rings')
-         Read(Value,*) Inp%DoRing
+         Read(Value,*) UEG_Inp%DoRing
 
         Case ('Do XRings')
-         Read(Value,*) Inp%DoXRing
+         Read(Value,*) UEG_Inp%DoXRing
 
         Case ('Do Ladders')
-         Read(Value,*) Inp%DoLadder
+         Read(Value,*) UEG_Inp%DoLadder
 
         Case ('Do Mosaics')
-         Read(Value,*) Inp%DoMosaic
+         Read(Value,*) UEG_Inp%DoMosaic
 
         Case ('Rings Range')
-         Read(Value,*) Inp%IRangeRing
+         Read(Value,*) UEG_Inp%IRangeRing
 
         Case ('XRings Range')
-         Read(Value,*) Inp%IRangeXRing
+         Read(Value,*) UEG_Inp%IRangeXRing
 
         Case ('Ladders Range')
-         Read(Value,*) Inp%IRangeLadder
+         Read(Value,*) UEG_Inp%IRangeLadder
 
         Case ('Mosaics Range')
-         Read(Value,*) Inp%IRangeMosaic
+         Read(Value,*) UEG_Inp%IRangeMosaic
 
         Case ('DriverDir Range') ! this implicitly sets the driver
-         Read(Value,*) Inp%IRangeDriverDirect
+         Read(Value,*) UEG_Inp%IRangeDriverDirect
 
         Case ('DriverEx Range') ! this implicitly sets the driver
-         Read(Value,*) Inp%IRangeDriverExchange
+         Read(Value,*) UEG_Inp%IRangeDriverExchange
 
         Case ('Energy Range') ! for the energy expression
-         Read(Value,*) Inp%IRangeEnergy
+         Read(Value,*) UEG_Inp%IRangeEnergy
 
         Case ('LinRings Range') ! for the linear rings and cross rings
-         Read(Value,*) Inp%IRangeLinRings
+         Read(Value,*) UEG_Inp%IRangeLinRings
 
         Case ('QuadRings Range') ! for the quadratic rings and cross rings
-         Read(Value,*) Inp%IRangeQuadRings
+         Read(Value,*) UEG_Inp%IRangeQuadRings
         
         Case ('DRings Range') ! for the dRPA terms
-         Read(Value,*) Inp%IRangeDirectRings
+         Read(Value,*) UEG_Inp%IRangeDirectRings
 
         Case ('ExRings Range') ! for the RPAX terms
-         Read(Value,*) Inp%IRangeExchangeRings
+         Read(Value,*) UEG_Inp%IRangeExchangeRings
 
         Case ('LinLadd Range') ! for the linear ladders
-         Read(Value,*) Inp%IRangeLinLadders
+         Read(Value,*) UEG_Inp%IRangeLinLadders
 
         Case ('QuadLadd Range') ! for the quadratic ladders
-         Read(Value,*) Inp%IRangeQuadLadders
+         Read(Value,*) UEG_Inp%IRangeQuadLadders
         
         Case ('DLadders Range') ! by analogy to rings 
-         Read(Value,*) Inp%IRangeDirectLadders
+         Read(Value,*) UEG_Inp%IRangeDirectLadders
 
         Case ('ExLadders Range') ! by analogy to rings
-         Read(Value,*) Inp%IRangeExchangeLadders
+         Read(Value,*) UEG_Inp%IRangeExchangeLadders
 
 
         Case Default   !  Unknown keyword
@@ -243,8 +251,8 @@
 !  Over to James.  !
 !==================!
 
-      Call Init_HEG_dummy(MaxKPoint,NElectron)
-      NAO = nBasis
+      Call Init_HEG_dummy(UEG_Inp%MaxKPoint,UEG_Inp%NElectron)
+      UEG_Inp%NAO = nBasis
 
 1000  Format('Error: Line number ',I4,' of Input not recognized; ',  &
              'subsequent lines not read.')
@@ -253,7 +261,6 @@
 
       Return
       End Subroutine ReadInput
-
 
 
 
