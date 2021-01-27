@@ -1,41 +1,42 @@
 
-   Module IO
-
-   Use Precision
-   Use Constants
-   Use HEG
-   Implicit None
-   Private
-   Public  :: ReadInput
-   type UEG_input   !! derived type for the inputs from the file "Input"
-        Integer :: NOcc
-        Integer :: NAO
-        Real (Kind=pr) :: Rs
-        Logical :: DoRing
-        Logical :: DoXRing
-        Logical :: DoLadder
-        Logical :: DoMosaic
-        Integer :: IRangeRing
-        Integer :: IRangeXRing
-        Integer :: IRangeLadder
-        Integer :: IRangeMosaic
-        Integer :: IRangeDriverDirect
-        Integer :: IRangeDriverExchange
-        Integer :: IRangeEnergy
-        Integer :: IRangeLinRings
-        Integer :: IRangeQuadRings
-        Integer :: IRangeDirectRings
-        Integer :: IRangeExchangeRings
-        Integer :: IRangeLinLadders
-        Integer :: IRangeQuadLadders
-        Integer :: IRangeDirectLadders
-        Integer :: IRangeExchangeLadders
-        Integer :: NElectron
-        Integer :: MaxKPoint
-   end type UEG_input
-
-   Contains
-      Subroutine ReadInput(UEG_Inp)
+  Module IO
+  
+  Use Precision
+  Use Constants
+  Use HEG
+  Implicit None
+  !!Private
+  Public  :: ReadInput
+  
+  type UEG_input   !! derived type for the inputs from the file "Input"
+       Integer :: NOcc
+       Integer :: NAO
+       Real (Kind=pr) :: Rs
+       Logical :: DoRing
+       Logical :: DoXRing
+       Logical :: DoLadder
+       Logical :: DoMosaic
+       Integer :: IRangeRing
+       Integer :: IRangeXRing
+       Integer :: IRangeLadder
+       Integer :: IRangeMosaic
+       Integer :: IRangeDriverDirect
+       Integer :: IRangeDriverExchange
+       Integer :: IRangeEnergy
+       Integer :: IRangeLinRings
+       Integer :: IRangeQuadRings
+       Integer :: IRangeDirectRings
+       Integer :: IRangeExchangeRings
+       Integer :: IRangeLinLadders
+       Integer :: IRangeQuadLadders
+       Integer :: IRangeDirectLadders
+       Integer :: IRangeExchangeLadders
+       Integer :: NElectron
+       Integer :: MaxKPoint
+  end type UEG_input
+  
+  Contains
+        Subroutine ReadInput(UEG_Inp)
       Implicit None
       !!Integer, Parameteonrams = 22
       Integer, Parameter    :: NParams = 22
@@ -324,5 +325,5 @@
       Return
       End Subroutine ParseLine
 
-   End Module IO
+  End Module IO
 

@@ -6,31 +6,29 @@
    Use CCScr    ! Holds G2abab, G2abba, Joo, Jvv
    Use DIISCC   ! Holds OldT2abab, OldT2abba, R2abab, R2abba
    Use HEG
+   Use IO
    Implicit None
    Real (Kind=pr), Parameter :: DenomFactor = 2.0_pr
-
+ 
    Contains
 
-      Subroutine DrvCCD(Fock,T2aaaa,T2abab,T2abba,NOcc,NBF,ESCF,ECorr,     &
-                        DoRings,DoXRings,DoLadders,DoMosaics,              &
-                        IRangeRing,IRangeXRing,IRangeLadder,IRangeMosaic,  &
-                        IRangeDriverDirect,IRangeDriverExchange,IRangeEnergy,                       &
-                        IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings, &
-                        IRangeLinLadders,IRangeQuadLadders,IRangeDirectLadders,IRangeExchangeLadders)
+      Subroutine DrvCCD(Fock,T2aaaa,T2abab,T2abba,UEGInput, ECorr, ESCF)
+      
       Use HEG, only: FindTol
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF
+      type(UEG_Input), Intent(In) :: UEGInput
+!      Integer,        Intent(In)    :: UEGInput%NOcc, 
       Real (Kind=pr), Intent(In)    :: ESCF
-      Real (Kind=pr), Intent(In)    :: Fock(NBF)
+      Real (Kind=pr), Intent(In)    :: Fock(UEGInput%NAO)
       Real (Kind=pr), Intent(Out)   :: ECorr
-      Logical,        Intent(In)    :: DoRings, DoXRings, DoLadders, DoMosaics
-      Integer,        Intent(In)    :: IRangeRing, IRangeXRing, IRangeLadder, IRangeMosaic
-      Integer,        Intent(In)    :: IRangeDriverDirect, IRangeDriverExchange, IRangeEnergy
-      Integer,        Intent(In)    :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings  
-      Integer,        Intent(In)    :: IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders
-      Real (Kind=pr), Intent(InOut) :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: T2abba(NOcc,NOcc,NOcc+1:NBF)
+!      Logical,        Intent(In)    :: UEGInput%DoRing, UEGInput%DoXRing, UEGInput%DoLadder, UEGInput%DoMosaic
+!      Integer,        Intent(In)    :: UEGInput%IRangeRing, UEGInput%IRangeXRing, UEGInput%IRangeLadder, UEGInput%IRangeMosaic
+!      Integer,        Intent(In)    :: UEGInput%IRangeDriverDirect, UEGInput%IRangeDriverExchange, UEGInput%IRangeEnergy
+!      Integer,        Intent(In)    :: UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings  
+!      Integer,        Intent(In)    :: UEGInput%IRangeLinLadders, UEGInput%IRangeQuadLadders, UEGInput%IRangeDirectLadders, UEGInput%IRangeExchangeLadders
+      Real (Kind=pr), Intent(InOut) :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Real (Kind=pr)                :: TolMax = 1.0E-8_pr
       Real (Kind=pr)                :: FailRatio = 100
       Integer,        Parameter     :: MaxIter = 1000
@@ -54,8 +52,8 @@
 
       Write(6,*) 'Doing CCD...'
 ! Allocate space for everything.
-      Call SetUpCCScr(NOcc,NOcc+1,NBF)
-      Call SetUpDIISCC(NOcc,NOcc+1,NBF,NDIIS)
+      Call SetUpCCScr(UEGInput%NOcc,UEGInput%NOcc+1,UEGInput%NAO)
+      Call SetUpDIISCC(UEGInput%NOcc,UEGInput%NOcc+1,UEGInput%NAO,NDIIS)
 
 
 ! Initialize variables and write the MP2 energy out again
@@ -63,14 +61,14 @@
       OldT2abba = Zero; OldT2abba(:,:,:,NDIIS) = T2abba; R2abba = Zero
       NIter = 1
       dT = Max(MaxVal(Abs(T2abab)),MaxVal(Abs(T2abba)))
-      Call CCEnergy(T2aaaa,T2abab,T2abba,ECorr,NOcc,NBF,IRangeEnergy)
+      Call CCEnergy(T2aaaa,T2abab,T2abba,ECorr,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeEnergy)
       Open(7,File='Output',Position='Append')
       Write(7,1010)
       Write(7,1020)
-      If(DoRings)   Write(7,1100)
-      If(DoXRings)  Write(7,1110)
-      If(DoLadders) Write(7,1120)
-      If(DoMosaics) Write(7,1130)
+      If(UEGInput%DoRing)   Write(7,1100)
+      If(UEGInput%DoXRing)  Write(7,1110)
+      If(UEGInput%DoLadder) Write(7,1120)
+      If(UEGInput%DoMosaic) Write(7,1130)
       Write(7,1020)
       Write(7,1030)
       Write(7,1040) ECorr,NIter,dT
@@ -79,44 +77,44 @@
 ! Start iterating!
       Do While(dT >= TolMax .and. NIter < MaxIter)
 ! Given OldT2 and R2, update T2 and R2
-        Call GetTFromDIIS(T2abab,OldT2abab,R2abab,NOcc,NBF,NDIIS,NIter)
-        Call GetTFromDIIS(T2abba,OldT2abba,R2abba,NOcc,NBF,NDIIS,NIter)
+        Call GetTFromDIIS(T2abab,OldT2abab,R2abab,UEGInput%NOcc,UEGInput%NAO,NDIIS,NIter)
+        Call GetTFromDIIS(T2abba,OldT2abba,R2abba,UEGInput%NOcc,UEGInput%NAO,NDIIS,NIter)
         T2aaaa = T2abab + T2abba
 ! Given T2 from DIIS, calculate G2.
-        Call GetG2Drivers(G2abab,G2abba,NOcc,NBF,IRangeDriverDirect,IRangeDriverExchange)
-        If(DoMosaics) Call GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeMosaic)
-        If(DoLadders) Call GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeLadder, &
-                                         IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders)
-        If(DoRings)   Call GetG2Rings(  G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeRing,  &
-                                        IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings)
-        If(DoXRings)  Call GetG2XRings( G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeXRing, &
-                                        IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings)
+        Call GetG2Drivers(G2abab,G2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeDriverDirect,UEGInput%IRangeDriverExchange)
+        If(UEGInput%DoMosaic) Call GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeMosaic)
+        If(UEGInput%DoLadder) Call GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeLadder, &
+                                         UEGInput%IRangeLinLadders, UEGInput%IRangeQuadLadders, UEGInput%IRangeDirectLadders, UEGInput%IRangeExchangeLadders)
+        If(UEGInput%DoRing)   Call GetG2Rings(  G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeRing,  &
+                                        UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings)
+        If(UEGInput%DoXRing)  Call GetG2XRings( G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeXRing, &
+                                        UEGInput%IRangeLinRings,UEGInput%IRangeQuadRings,UEGInput%IRangeDirectRings,UEGInput%IRangeExchangeRings)
         
 ! Calculate the residual G[T]-HT
-        Call GetRes(T2abab,G2abab,R2abab,Fock,NOcc,NBF,NDIIS)
-        Call GetRes(T2abba,G2abba,R2abba,Fock,NOcc,NBF,NDIIS)
+        Call GetRes(T2abab,G2abab,R2abab,Fock,UEGInput%NOcc,UEGInput%NAO,NDIIS)
+        Call GetRes(T2abba,G2abba,R2abba,Fock,UEGInput%NOcc,UEGInput%NAO,NDIIS)
 ! Solve the CC equations, update OldT2, and get the energy
-        Call SolveCC(T2abab,G2abab,Fock,NOcc,NBF)
-        Call SolveCC(T2abba,G2abba,Fock,NOcc,NBF)
+        Call SolveCC(T2abab,G2abab,Fock,UEGInput%NOcc,UEGInput%NAO)
+        Call SolveCC(T2abba,G2abba,Fock,UEGInput%NOcc,UEGInput%NAO)
         T2aaaa = T2abab + T2abba
-        Call CnvrgCC(T2abab,OldT2abab,T2abba,OldT2abba,dT,NOcc,NBF,NIter,NDIIS)
-        Call CCEnergy(T2aaaa,T2abab,T2abba,ECorr,NOcc,NBF,IRangeEnergy)
+        Call CnvrgCC(T2abab,OldT2abab,T2abba,OldT2abba,dT,UEGInput%NOcc,UEGInput%NAO,NIter,NDIIS)
+        Call CCEnergy(T2aaaa,T2abab,T2abba,ECorr,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeEnergy)
         Write(7,1040) ECorr, NIter, dT
         Write(6,1040) ECorr, NIter, dT
       End Do
 
 
 ! Check the resisdual
-      Call GetG2Drivers(G2abab,G2abba,NOcc,NBF,IRangeDriverDirect,IRangeDriverExchange)
-      If(DoMosaics) Call GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeMosaic)
-      If(DoLadders) Call GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeLadder, &
-                                         IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders)
-      If(DoRings)   Call GetG2Rings(  G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeRing, &
-                                        IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings)
-      If(DoXRings)  Call GetG2XRings( G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRangeXRing, &
-                                        IRangeLinRings,IRangeQuadRings,IRangeDirectRings,IRangeExchangeRings)
-      Call GetRes(T2abab,G2abab,R2abab,Fock,NOcc,NBF,NDIIS)
-      Call GetRes(T2abba,G2abba,R2abba,Fock,NOcc,NBF,NDIIS)
+      Call GetG2Drivers(G2abab,G2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeDriverDirect,UEGInput%IRangeDriverExchange)
+      If(UEGInput%DoMosaic) Call GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeMosaic)
+      If(UEGInput%DoLadder) Call GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeLadder, &
+                                         UEGInput%IRangeLinLadders, UEGInput%IRangeQuadLadders, UEGInput%IRangeDirectLadders, UEGInput%IRangeExchangeLadders)
+      If(UEGInput%DoRing)   Call GetG2Rings(  G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeRing, &
+                                        UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings)
+      If(UEGInput%DoXRing)  Call GetG2XRings( G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,UEGInput%IRangeXRing, &
+                                        UEGInput%IRangeLinRings,UEGInput%IRangeQuadRings,UEGInput%IRangeDirectRings,UEGInput%IRangeExchangeRings)
+      Call GetRes(T2abab,G2abab,R2abab,Fock,UEGInput%NOcc,UEGInput%NAO,NDIIS)
+      Call GetRes(T2abba,G2abba,R2abba,Fock,UEGInput%NOcc,UEGInput%NAO,NDIIS)
       MaxRes =  Max(MaxVal(Abs(R2abab(:,:,:,NDIIS))),    &
                     MaxVal(Abs(R2abba(:,:,:,NDIIS))))
       Fail = MaxRes > FailRatio*TolMax
@@ -161,12 +159,12 @@
 
 
 
-      Subroutine CCEnergy(T2aaaa,T2abab,T2abba,ECorr,NOcc,NBF,IRange)
+      Subroutine CCEnergy(T2aaaa,T2abab,T2abba,ECorr,UEGInput%NOcc,UEGInput%NAO,IRange)
       Implicit None
-      Integer,        Intent(In)  :: NOcc,NBF
-      Real (Kind=pr), Intent(In)  :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)  :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)  :: T2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)  :: UEGInput%NOcc,UEGInput%NAO
+      Real (Kind=pr), Intent(In)  :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)  :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)  :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Real (Kind=pr), Intent(Out) :: ECorr
       Real (Kind=pr) :: V_ijab, V_ijba, Eaaaa, Eabab, Eabba, dE
       Integer        :: I, J, A, B
@@ -181,11 +179,11 @@
       Eaaaa = Zero
       Eabab = Zero
       Eabba = Zero
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
         V_ijab = ERI(A,B,I,J,IRange)
         V_ijba = ERI(A,B,J,I,IRange)
         If(Min(V_ijab,V_ijba) < -80.0_pr) Then
@@ -214,12 +212,12 @@
 
 
 
-      Subroutine SolveCC(T2,G2,Fock,NOcc,NBF)
+      Subroutine SolveCC(T2,G2,Fock,UEGInput%NOcc,UEGInput%NAO)
       Implicit None
-      Integer,        Intent(In)  :: NOcc, NBF
-      Real (Kind=pr), Intent(In)  :: Fock(NBF)
-      Real (Kind=pr), Intent(In)  :: G2(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(Out) :: T2(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)  :: UEGInput%NOcc, UEGInput%NAO
+      Real (Kind=pr), Intent(In)  :: Fock(UEGInput%NAO)
+      Real (Kind=pr), Intent(In)  :: G2(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(Out) :: T2(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Real (Kind=pr) :: Denom
       Integer        :: I, J, A, B
 
@@ -227,11 +225,11 @@
 !  Solves H.T = G.  Trivial.  !
 !=============================!
 
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
         Denom = Fock(I) + Fock(J) - Fock(A) - Fock(B)
 !       T2(I,J,A) = G2(I,J,A)/Denom
         T2(I,J,A) = (G2(I,J,A)/Denom - (One-DenomFactor)*T2(I,J,A))/DenomFactor
@@ -247,13 +245,13 @@
 
 
 
-      Subroutine GetRes(T2,G2,R2,Fock,NOcc,NBF,NDIIS)
+      Subroutine GetRes(T2,G2,R2,Fock,UEGInput%NOcc,UEGInput%NAO,NDIIS)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF, NDIIS
-      Real (Kind=pr), Intent(In)    :: Fock(NBF)
-      Real (Kind=pr), Intent(In)    :: T2(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: G2(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: R2(NOcc,NOcc,NOcc+1:NBF,NDIIS)
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO, NDIIS
+      Real (Kind=pr), Intent(In)    :: Fock(UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: G2(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: R2(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO,NDIIS)
       Real (Kind=pr) :: Rijab
       Integer :: I, J, A, B
 
@@ -261,11 +259,11 @@
 !  Computes the residual HT-G.  !
 !===============================!
 
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
         Rijab = -G2(I,J,A) + (Fock(I) + Fock(J) - Fock(A) - Fock(B))*T2(I,J,A)
         R2(I,J,A,NDIIS) = Rijab
       End Do
@@ -280,15 +278,15 @@
 
 
 
-      Subroutine CnvrgCC(T2abab,OldT2abab,T2abba,OldT2abba,dT,NOcc,NBF,NIter,NDIIS)
+      Subroutine CnvrgCC(T2abab,OldT2abab,T2abba,OldT2abba,dT,UEGInput%NOcc,UEGInput%NAO,NIter,NDIIS)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF, NDIIS
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO, NDIIS
       Integer,        Intent(InOut) :: NIter
       Real (Kind=pr), Intent(Out)   :: dT
-      Real (Kind=pr), Intent(In)    :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abba(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: OldT2abab(NOcc,NOcc,NOcc+1:NBF,NDIIS)
-      Real (Kind=pr), Intent(InOut) :: OldT2abba(NOcc,NOcc,NOcc+1:NBF,NDIIS)
+      Real (Kind=pr), Intent(In)    :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: OldT2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO,NDIIS)
+      Real (Kind=pr), Intent(InOut) :: OldT2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO,NDIIS)
       Integer, Parameter :: MaxIter = 10000
       Real (Kind=pr) :: dTabab, dTabba
 
@@ -321,11 +319,11 @@
 
 
 
-      Subroutine GetG2Drivers(G2abab,G2abba,NOcc,NBF,IRangeDirect,IRangeExchange)
+      Subroutine GetG2Drivers(G2abab,G2abba,UEGInput%NOcc,UEGInput%NAO,IRangeDirect,IRangeExchange)
       Implicit None
-      Integer,        Intent(In)  :: NOcc, NBF, IRangeDirect, IRangeExchange
-      Real (Kind=pr), Intent(Out) :: G2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(Out) :: G2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)  :: UEGInput%NOcc, UEGInput%NAO, IRangeDirect, IRangeExchange
+      Real (Kind=pr), Intent(Out) :: G2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(Out) :: G2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
 ! Local variables
       Integer :: I, J, A, B
       Real (Kind=pr) :: V_ijab, V_ijba
@@ -336,11 +334,11 @@
 
       G2abab = Zero
       G2abba = Zero
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
         V_ijab = ERI(I,J,A,B,IRangeDirect)
         V_ijba = ERI(I,J,B,A,IRangeExchange)
         If(Min(V_ijab,V_ijba) < -80.0_pr) Then
@@ -361,14 +359,14 @@
 
 
 
-      Subroutine GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRange)
+      Subroutine GetG2Mosaics(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,IRange)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF
-      Real (Kind=pr), Intent(In)    :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abba(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO
+      Real (Kind=pr), Intent(In)    :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Integer,        Intent(In)    :: IRange
 ! Local variables
       Integer :: I, J, A, B, K, L, C, D
@@ -397,11 +395,11 @@
 
       Joo = Zero
       Jvv = Zero
-      Do K = 1,NOcc
-      Do L = 1,NOcc
-      Do C = NOcc+1,NBF
+      Do K = 1,UEGInput%NOcc
+      Do L = 1,UEGInput%NOcc
+      Do C = UEGInput%NOcc+1,UEGInput%NAO
         D = FindIndex(K,L,C)
-        If(D <= NOcc) Cycle
+        If(D <= UEGInput%NOcc) Cycle
         V_cdkl = ERI(C,D,K,L,dummy_flag=IRange)
         V_cdlk = ERI(C,D,L,K,dummy_flag=IRange)
         If(Min(V_cdkl,V_cdlk) < -80.0_pr) Then
@@ -418,11 +416,11 @@
 
       
 ! The intermediates are done, so contract with T2
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
         G2abab(I,J,A) = G2abab(I,J,A) - F12*(Jvv(A)*T2abab(I,J,A) + Jvv(B)*T2abab(I,J,A))
         G2abba(I,J,A) = G2abba(I,J,A) - F12*(Jvv(A)*T2abba(I,J,A) + Jvv(B)*T2abba(I,J,A))
         G2abab(I,J,A) = G2abab(I,J,A) - F12*(Joo(I)*T2abab(I,J,A) + Joo(J)*T2abab(I,J,A))
@@ -440,17 +438,17 @@
 
 
 
-      Subroutine GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRange, &
-                              IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders)
+      Subroutine GetG2Ladders(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,IRange, &
+                              UEGInput%IRangeLinLadders, UEGInput%IRangeQuadLadders, UEGInput%IRangeDirectLadders, UEGInput%IRangeExchangeLadders)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF
-      Real (Kind=pr), Intent(In)    :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abba(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO
+      Real (Kind=pr), Intent(In)    :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Integer,        Intent(In)    :: IRange
-      Integer,        Intent(In)    :: IRangeLinLadders, IRangeQuadLadders, IRangeDirectLadders, IRangeExchangeLadders
+      Integer,        Intent(In)    :: UEGInput%IRangeLinLadders, UEGInput%IRangeQuadLadders, UEGInput%IRangeDirectLadders, UEGInput%IRangeExchangeLadders
 ! Local variables
       Integer :: I, J, A, B, K, L, C, D
       Real (Kind=pr) :: J2_ijkl, J3_ijkl, V_cdkl, V_cdlk, V_cdab, V_cdba
@@ -460,26 +458,26 @@
 !  As vectors, we have A + B = I + J = K + L = C + D.             !
 !=================================================================!
 
-      Do I = 1,NOcc
-      Do J = 1,NOcc
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
 
 ! Build the intermediates for each IJKL => hole-hole ladder, ladder T.V.T
 ! We'll have J2_ijkl which goes with T2abab(K,L,A,B) in G2abab(I,J,A,B) and with T2abba(K,L,A,B) in G2abba(I,J,A,B)
 ! We'll have J3_ijkl which goes with T2abba(K,L,A,B) in G2abab(I,J,A,B) and with T2abab(K,L,A,B) in G2abba(I,J,A,B)
-        Do K = 1,NOcc
+        Do K = 1,UEGInput%NOcc
           L = FindIndex(I,J,K)
-          If(L > NOcc .or. L <= 0) Cycle
-          J2_ijkl =  ERI(I,J,K,L,max(IRange,IRangeDirectLadders,IRangeLinLadders))              ! For T2abab in G2abab and T2abba in G2abba
-          J3_ijkl = -ERI(I,J,L,K,max(IRange,IRangeExchangeLadders,IRangeLinLadders))              ! For T2abba in G2abab and T2abab in G2abba
+          If(L > UEGInput%NOcc .or. L <= 0) Cycle
+          J2_ijkl =  ERI(I,J,K,L,max(IRange,UEGInput%IRangeDirectLadders,UEGInput%IRangeLinLadders))              ! For T2abab in G2abab and T2abba in G2abba
+          J3_ijkl = -ERI(I,J,L,K,max(IRange,UEGInput%IRangeExchangeLadders,UEGInput%IRangeLinLadders))              ! For T2abba in G2abab and T2abab in G2abba
           If(Min(J2_ijkl,-J3_ijkl) < -80.0_pr) Then
             Print *, "Disallowed excitation not trapped!"
             Cycle
           End If
-          Do C = NOcc+1,NBF
+          Do C = UEGInput%NOcc+1,UEGInput%NAO
             D = FindIndex(I,J,C)
-            If(D <= NOcc) Cycle
-            V_cdkl = ERI(C,D,K,L,dummy_flag=max(IRange,IRangeDirectLadders,IRangeQuadLadders))
-            V_cdlk = ERI(C,D,L,K,dummy_flag=max(IRange,IRangeExchangeLadders,IRangeQuadLadders))
+            If(D <= UEGInput%NOcc) Cycle
+            V_cdkl = ERI(C,D,K,L,dummy_flag=max(IRange,UEGInput%IRangeDirectLadders,UEGInput%IRangeQuadLadders))
+            V_cdlk = ERI(C,D,L,K,dummy_flag=max(IRange,UEGInput%IRangeExchangeLadders,UEGInput%IRangeQuadLadders))
             If(Min(V_cdkl,V_cdlk) < -80.0_pr) Then
               Print *, "Disallowed excitation not trapped!"
              Cycle
@@ -488,23 +486,23 @@
             J3_ijkl = J3_ijkl  + F12*(V_cdkl*T2abba(I,J,C) - V_cdlk*T2abab(I,J,C))
           End Do
 ! The intermediates are done, so contract with T2
-          Do A = NOcc+1,NBF
+          Do A = UEGInput%NOcc+1,UEGInput%NAO
             B = FindIndex(I,J,A)
-            If(B <= NOcc) Cycle
+            If(B <= UEGInput%NOcc) Cycle
             G2abab(I,J,A) = G2abab(I,J,A) + F12*(J2_ijkl*T2abab(K,L,A) + J3_ijkl*T2abba(K,L,A))
             G2abba(I,J,A) = G2abba(I,J,A) + F12*(J2_ijkl*T2abba(K,L,A) + J3_ijkl*T2abab(K,L,A))
           End Do
         End Do
 
 ! Add the particle-particle ladder
-        Do A = NOcc+1,NBF
+        Do A = UEGInput%NOcc+1,UEGInput%NAO
           B = FindIndex(I,J,A)
-          If(B <= NOcc) Cycle
-          Do C = NOcc+1,NBF
+          If(B <= UEGInput%NOcc) Cycle
+          Do C = UEGInput%NOcc+1,UEGInput%NAO
             D = FindIndex(I,J,C)
-            If(D <= NOcc) Cycle
-            V_cdab = ERI(C,D,A,B,dummy_flag=max(IRange,IRangeDirectLadders,IRangeLinLadders))
-            V_cdba = ERI(C,D,B,A,dummy_flag=max(IRange,IRangeExchangeLadders,IRangeLinLadders))
+            If(D <= UEGInput%NOcc) Cycle
+            V_cdab = ERI(C,D,A,B,dummy_flag=max(IRange,UEGInput%IRangeDirectLadders,UEGInput%IRangeLinLadders))
+            V_cdba = ERI(C,D,B,A,dummy_flag=max(IRange,UEGInput%IRangeExchangeLadders,UEGInput%IRangeLinLadders))
             If(Min(V_cdab,V_cdba) < -80.0_pr) Then
              Print *, "Disallowed excitation not trapped!"
              Cycle
@@ -524,17 +522,17 @@
 
 
 
-      Subroutine GetG2Rings(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRange, &
-                            IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings)
+      Subroutine GetG2Rings(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,IRange, &
+                            UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF
-      Real (Kind=pr), Intent(In)    :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abba(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO
+      Real (Kind=pr), Intent(In)    :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Integer,        Intent(In)    :: IRange
-      Integer,        Intent(In)    :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings
+      Integer,        Intent(In)    :: UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings
 ! Local variables
       Integer :: I, J, A, B, K, L, C, D
       Real (Kind=pr) :: J1_idal, J2_idal, J3_idal
@@ -548,18 +546,18 @@
 !===========================================================!
 
 ! These are the linear terms
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
 
 ! Do the t_ik^ac V_jc^bk contraction
-        Do K = 1,NOcc
+        Do K = 1,UEGInput%NOcc
           C = FindIndex(I,K,A)
-          If(C <= NOcc) Cycle
-          V_cjkb = ERI(C,J,K,B,dummy_flag=max(IRange,IRangeDirectRings,IRangeLinRings))
-          V_cjbk = ERI(C,J,B,K,dummy_flag=max(IRange,IRangeExchangeRings,IRangeLinRings))
+          If(C <= UEGInput%NOcc) Cycle
+          V_cjkb = ERI(C,J,K,B,dummy_flag=max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeLinRings))
+          V_cjbk = ERI(C,J,B,K,dummy_flag=max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeLinRings))
           If(Min(V_cjkb, V_cjbk) < -80.0_pr) Then
             Print *, "Disallowed excitation not trapped!"
             Cycle
@@ -569,11 +567,11 @@
         End Do
 
 ! Do the t_jk^bc V_ic^ak contraction
-        Do K = 1,NOcc
+        Do K = 1,UEGInput%NOcc
           C = FindIndex(J,K,B)
-          If(C <= NOcc) Cycle
-          V_cika = ERI(C,I,K,A,dummy_flag=max(IRange,IRangeDirectRings,IRangeLinRings))
-          V_ciak = ERI(C,I,A,K,dummy_flag=max(IRange,IRangeExchangeRings,IRangeLinRings))
+          If(C <= UEGInput%NOcc) Cycle
+          V_cika = ERI(C,I,K,A,dummy_flag=max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeLinRings))
+          V_ciak = ERI(C,I,A,K,dummy_flag=max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeLinRings))
           If(Min(V_cika, V_ciak) < -80.0_pr) Then
             Print *, "Disallowed excitation not trapped!"
             Cycle
@@ -591,19 +589,19 @@
 ! We'll have J2_idal, which contracts with T2abab(L,J,D,B) in G2aaaa(I,J,A,B) and with T2aaaa(L,J,D,B) in G2abab(I,J,A,B
 ! We'll have J3_idal, which contracts with T2abba(L,J,D,B) in G2abba(I,J,A,B)
 ! This one is a true pain in the ass.
-      Do I = 1,NOcc
-      Do A = NOcc+1,NBF
-        Do L = 1,NOcc
+      Do I = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
+        Do L = 1,UEGInput%NOcc
           J1_idal = Zero   ! Intermediate for T2aaaa(L,J,D,B) in G2aaaa(I,J,A,B) and T2abab(L,J,D,B) in G2abab(I,J,A,B)
           J2_idal = Zero   ! Intermediate for T2abab(L,J,D,B) in G2aaaa(I,J,A,B) and T2aaaa(L,J,D,B) in G2abab(I,J,A,B)
           J3_idal = Zero   ! Intermediate for T2abba(L,J,D,B) in G2abba(I,J,A,B)
-          Do K = 1,NOcc
+          Do K = 1,UEGInput%NOcc
             C = FindIndex(I,K,A)
-            If(C <= NOcc) Cycle
+            If(C <= UEGInput%NOcc) Cycle
             D = FindIndex(K,L,C)
-            If(D <= NOcc) Cycle
-            V_cdkl = ERI(C,D,K,L,dummy_flag=max(IRange,IRangeDirectRings,IRangeQuadRings))
-            V_cdlk = ERI(C,D,L,K,dummy_flag=max(IRange,IRangeExchangeRings,IRangeQuadRings))
+            If(D <= UEGInput%NOcc) Cycle
+            V_cdkl = ERI(C,D,K,L,dummy_flag=max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeQuadRings))
+            V_cdlk = ERI(C,D,L,K,dummy_flag=max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeQuadRings))
             If(Min(V_cdkl,V_cdlk) < -80.0_pr) Then
               Print *, "Disallowed excitation not trapped!"
               Cycle
@@ -615,11 +613,11 @@
 
 ! The intermediates are done, so contract with T2
 ! In principle, we've got the right D here.
-          Do J = 1,NOcc
+          Do J = 1,UEGInput%NOcc
             B = FindIndex(I,J,A)
-            If(B <= NOcc) Cycle
+            If(B <= UEGInput%NOcc) Cycle
             D = FindIndex(J,L,B)
-            If(D <= NOcc) Cycle
+            If(D <= UEGInput%NOcc) Cycle
             G2abab(I,J,A) = G2abab(I,J,A) + J2_idal*T2aaaa(L,J,D) + J1_idal*T2abab(L,J,D)
             G2abba(I,J,A) = G2abba(I,J,A) + J3_idal*T2abba(L,J,D)
           End Do
@@ -635,17 +633,17 @@
 
 
 
-      Subroutine GetG2XRings(G2abab,G2abba,T2aaaa,T2abab,T2abba,NOcc,NBF,IRange, &
-                             IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings)
+      Subroutine GetG2XRings(G2abab,G2abba,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,IRange, &
+                             UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings)
       Implicit None
-      Integer,        Intent(In)    :: NOcc, NBF
-      Real (Kind=pr), Intent(In)    :: T2aaaa(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(In)    :: T2abba(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abab(NOcc,NOcc,NOcc+1:NBF)
-      Real (Kind=pr), Intent(InOut) :: G2abba(NOcc,NOcc,NOcc+1:NBF)
+      Integer,        Intent(In)    :: UEGInput%NOcc, UEGInput%NAO
+      Real (Kind=pr), Intent(In)    :: T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(In)    :: T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
+      Real (Kind=pr), Intent(InOut) :: G2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO)
       Integer,        Intent(In)    :: IRange
-      Integer,        Intent(In)    :: IRangeLinRings, IRangeQuadRings, IRangeDirectRings, IRangeExchangeRings
+      Integer,        Intent(In)    :: UEGInput%IRangeLinRings, UEGInput%IRangeQuadRings, UEGInput%IRangeDirectRings, UEGInput%IRangeExchangeRings
 ! Local variables
       Integer :: I, J, A, B, K, L, C, D
       Real (Kind=pr) :: J1_idlb, J2_idlb, J3_idlb
@@ -660,18 +658,18 @@
 !===========================================================!
 
 ! These are the linear terms
-      Do I = 1,NOcc
-      Do J = 1,NOcc
-      Do A = NOcc+1,NBF
+      Do I = 1,UEGInput%NOcc
+      Do J = 1,UEGInput%NOcc
+      Do A = UEGInput%NOcc+1,UEGInput%NAO
         B = FindIndex(I,J,A)
-        If(B <= NOcc) Cycle
+        If(B <= UEGInput%NOcc) Cycle
 
 ! Do the t_ik^cb V_jc^ka contraction
-        Do K = 1,NOcc
+        Do K = 1,UEGInput%NOcc
           C = FindIndex(K,I,B)
-          If(C <= NOcc) Cycle
-          V_jcka = ERI(J,C,K,A,max(IRange,IRangeExchangeRings,IRangeLinRings))
-          V_jcak = ERI(J,C,A,K,max(IRange,IRangeDirectRings,IRangeLinRings))
+          If(C <= UEGInput%NOcc) Cycle
+          V_jcka = ERI(J,C,K,A,max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeLinRings))
+          V_jcak = ERI(J,C,A,K,max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeLinRings))
           If(Min(V_jcka,V_jcak) < -80.0_pr) Then
             Print *, "Disallowed excitation not trapped!"
             Cycle
@@ -681,11 +679,11 @@
         End Do
 
 ! Do the t_jk^ca v_ic^kb contraction
-        Do K = 1,NOcc
+        Do K = 1,UEGInput%NOcc
           C = FindIndex(K,J,A)       ! should return the same as GetIndex(I,K,B), but check!
-          If(C <= NOcc) Cycle
-          V_ickb = ERI(I,C,K,B,max(IRange,IRangeExchangeRings,IRangeLinRings))
-          V_icbk = ERI(I,C,B,K,max(IRange,IRangeDirectRings,IRangeLinRings))
+          If(C <= UEGInput%NOcc) Cycle
+          V_ickb = ERI(I,C,K,B,max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeLinRings))
+          V_icbk = ERI(I,C,B,K,max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeLinRings))
           If(Min(V_ickb,V_icbk) < -80.0_pr) Then
             Print *, "Disallowed excitation not trapped!"
             Cycle
@@ -702,19 +700,19 @@
 ! We'll have J1_idlb, which contracts with T2aaaa(L,J,A,D) in G2aaaa(I,J,A,B) and with T2abba(L,J,A,D) in G2abba(I,J,A,B)
 ! We'll have J2_idlb, which contracts with T2abba(L,J,A,D) in G2aaaa(I,J,A,B) and with T2aaaa(L,J,A,D) in G2abba(I,J,A,B
 ! We'll have J3_idlb, which contracts with T2abab(L,J,A,D) in G2abab(I,J,A,B)
-      Do I = 1,NOcc
-      Do B = NOcc+1,NBF
-        Do L = 1,NOcc
+      Do I = 1,UEGInput%NOcc
+      Do B = UEGInput%NOcc+1,UEGInput%NAO
+        Do L = 1,UEGInput%NOcc
           J1_idlb = Zero   ! Intermediate for T2aaaa(L,J,A,D) in G2aaaa(I,J,A,B) and T2abba(L,J,A,D) in G2abba(I,J,A,B)
           J2_idlb = Zero   ! Intermediate for T2abba(L,J,A,D) in G2aaaa(I,J,A,B) and T2aaaa(L,J,A,D) in G2abba(I,J,A,B
           J3_idlb = Zero   ! Intermediate for T2abab(L,J,D,B) in G2abab(I,J,A,B)
-          Do K = 1,NOcc
+          Do K = 1,UEGInput%NOcc
             C = FindIndex(I,K,B)
-            If(C <= NOcc) Cycle
+            If(C <= UEGInput%NOcc) Cycle
             D = FindIndex(K,L,C)
-            If(D <= NOcc) Cycle
-            V_cdkl = ERI(C,D,K,L,max(IRange,IRangeDirectRings,IRangeQuadRings))
-            V_cdlk = ERI(C,D,L,K,max(IRange,IRangeExchangeRings,IRangeQuadRings))
+            If(D <= UEGInput%NOcc) Cycle
+            V_cdkl = ERI(C,D,K,L,max(IRange,UEGInput%IRangeDirectRings,UEGInput%IRangeQuadRings))
+            V_cdlk = ERI(C,D,L,K,max(IRange,UEGInput%IRangeExchangeRings,UEGInput%IRangeQuadRings))
             If(Min(V_cdkl,V_cdlk) < -80.0_pr) Then
               Print *, "Disallowed excitation not trapped!"
               Cycle
@@ -724,11 +722,11 @@
             J3_idlb = J3_idlb + T2abab(K,I,B)*V_cdlk
           End Do
 ! The intermediates are done, so contract with T2
-          Do J = 1,NOcc
+          Do J = 1,UEGInput%NOcc
             A = FindIndex(J,I,B)
-            If(A <= NOcc) Cycle
+            If(A <= UEGInput%NOcc) Cycle
             D = FindIndex(L,J,A)
-            If(D <= NOcc) Cycle
+            If(D <= UEGInput%NOcc) Cycle
             G2abba(I,J,A) = G2abba(I,J,A) - J1_idlb*T2abba(L,J,A) - J2_idlb*T2aaaa(L,J,A)
             G2abab(I,J,A) = G2abab(I,J,A) + J3_idlb*T2abab(L,J,A)
           End Do

@@ -6,6 +6,7 @@
       Use CCD
       Implicit None
 ! Dimensioning variables
+      type(UEG_Input) :: UEGInput
 !!      Integer :: NOcc, NAO
 !!      Logical :: DoRing, DoXRing, DoLadder, DoMosaic
 !!      Integer :: IRangeRing, IRangeXRing, IRangeLadder, IRangeMosaic
@@ -31,9 +32,10 @@
 !  The first thing we must do is read the  !
 !  basic information for the calculation.  !
 !==========================================!
-      type UEGInput
-          include "UEG_Input.f90"!!type(UEG_Input), Intent(Out) :: UEGInput
-      end type UEGInput
+      !!type UEGInput
+      !!    include "UEG_Input.f90"
+     !! type(UEG_Input) :: UEGInput
+      !!end type UEGInput
       
       Call ReadInput(UEGInput)
 
@@ -42,25 +44,25 @@
 !==========================================!
 
       IAlloc = 0
-      Allocate(T2aaaa(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(1))
-      Allocate(T2abab(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(2))
-      Allocate(T2abba(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(3))
-      Allocate(X2aaaa(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(4))
-      Allocate(X2abab(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(5))
-      Allocate(X2abba(UEG_Inp%NOcc,UEG_Inp%NOcc,UEG_Inp%NOcc+1:UEG_Inp%NAO),  Stat=IAlloc(6))
+      Allocate(T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(1))
+      Allocate(T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(2))
+      Allocate(T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(3))
+      Allocate(X2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(4))
+      Allocate(X2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(5))
+      Allocate(X2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(6))
       If(Any(IAlloc /= 0)) Stop "Could not allocate in main"
       Open(7,File='Output',Status="Replace")
       Close(7)
 
 !=====================================================================!
-      Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEG_Inp%NOcc,UEG_Inp%NAO,EHF,ECorr)
+      Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
 !!      If(iRSPoint == 1) Then
       T2aaaa = X2aaaa
       T2abab = X2abab
       T2abba = X2abba
 !!       End If
         
-       Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEG_Inp)
+       Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEGInput,ECorr,EHF)
 
 !==============================================!
 !  Lastly, deallocate memory and exit safely.  !
