@@ -56,11 +56,13 @@
 
 !=====================================================================!
       Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
-
+!!      If(iRSPoint == 1) Then
       T2aaaa = X2aaaa
       T2abab = X2abab
       T2abba = X2abba
+!!       End If
         
+!!       Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEGInput,ECorr,EHF)
        Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr,     &
                    UEGInput%DoRing,UEGInput%DoXRing,UEGInput%DoLadder,UEGInput%DoMosaic,              &
                    UEGInput%IRangeRing,UEGInput%IRangeXRing,UEGInput%IRangeLadder,UEGInput%IRangeMosaic,  &
