@@ -5,7 +5,7 @@
    Use Constants
    Use HEG
    Implicit None
-   Private
+   !!Private
    Public  :: ReadInput
    type UEG_input   !! derived type for the inputs from the file "Input"
         Integer :: NOcc

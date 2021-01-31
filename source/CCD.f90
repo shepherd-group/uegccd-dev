@@ -740,4 +740,3 @@
       End Subroutine GetG2XRings
 
    End Module CCD
-
