@@ -39,7 +39,7 @@
       Subroutine ReadInput(UEG_Inp)
       Implicit None
       !!Integer, Parameteonrams = 22
-      Integer, Parameter    :: NParams = 22
+      Integer, Parameter    :: NParams = 23
       Integer, Parameter    :: LName   = 19
       Integer, Parameter    :: LLine   = 79
       Logical               :: Error, Exists
