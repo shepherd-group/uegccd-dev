@@ -1,5 +1,4 @@
 
-<<<<<<< HEAD
    Module IO
 
    Use Precision
@@ -11,12 +10,12 @@
    type UEG_input   !! derived type for the inputs from the file "Input"
         Integer :: NOcc
         Integer :: NAO
-        Real (Kind=pr) :: Rs
-        Logical :: DoRing
-        Logical :: DoXRing
-        Logical :: DoLadder
-        Logical :: DoMosaic
-        Integer :: IRangeRing
+        Real (Kind=pr) :: Rs !Density measured in Wigner-Seitz radius, r_s
+        Logical :: DoRing   !T/F flag to turn off/on the rings
+        Logical :: DoXRing  !T/F flag to turn off/on the cross-rings
+        Logical :: DoLadder !T/F flag to turn off/on the ladders
+        Logical :: DoMosaic ! T/F flag to turn off/on the mosaic
+        Integer :: IRangeRing  
         Integer :: IRangeXRing
         Integer :: IRangeLadder
         Integer :: IRangeMosaic
@@ -31,52 +30,13 @@
         Integer :: IRangeQuadLadders
         Integer :: IRangeDirectLadders
         Integer :: IRangeExchangeLadders
-        Integer :: NElectron
+        Integer :: NElectron              !Number of electrons in the system
         Integer :: MaxKPoint
+        Character(len = 20) :: DoCalc  !Input to choose which calc to run
    end type UEG_input
 
    Contains
       Subroutine ReadInput(UEG_Inp)
-=======
-  Module IO
-  
-  Use Precision
-  Use Constants
-  Use HEG
-  Implicit None
-  !!Private
-  Public  :: ReadInput
-  
-  type UEG_input   !! derived type for the inputs from the file "Input"
-       Integer :: NOcc
-       Integer :: NAO
-       Real (Kind=pr) :: Rs
-       Logical :: DoRing
-       Logical :: DoXRing
-       Logical :: DoLadder
-       Logical :: DoMosaic
-       Integer :: IRangeRing
-       Integer :: IRangeXRing
-       Integer :: IRangeLadder
-       Integer :: IRangeMosaic
-       Integer :: IRangeDriverDirect
-       Integer :: IRangeDriverExchange
-       Integer :: IRangeEnergy
-       Integer :: IRangeLinRings
-       Integer :: IRangeQuadRings
-       Integer :: IRangeDirectRings
-       Integer :: IRangeExchangeRings
-       Integer :: IRangeLinLadders
-       Integer :: IRangeQuadLadders
-       Integer :: IRangeDirectLadders
-       Integer :: IRangeExchangeLadders
-       Integer :: NElectron
-       Integer :: MaxKPoint
-  end type UEG_input
-  
-  Contains
-        Subroutine ReadInput(UEG_Inp)
->>>>>>> aeafd84acb1ad27a063f1f32a4aabb433797179b
       Implicit None
       !!Integer, Parameteonrams = 22
       Integer, Parameter    :: NParams = 22
@@ -141,6 +101,7 @@
       ParamName = (/'# Electrons        ',    &
                     'Momentum Cutoff    ',    &
                     'Rs                 ',    &
+                    'Do Calculation     ',    & ! This sets the calculation type
                     'Do Rings           ',    &
                     'Do XRings          ',    &
                     'Do Ladders         ',    &
@@ -198,9 +159,9 @@
 
         Case ('Rs')
          Read(Value,*) UEG_Inp%Rs
-!!
-!!        Case ('# rS Points')
-!!         Read(Value,*) NumRSPoints
+
+        Case ('Do Calculation')
+         Read(Value,*)UEG_Inp%DoCalc
 
         Case ('Do Rings')
          Read(Value,*) UEG_Inp%DoRing

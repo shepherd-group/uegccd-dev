@@ -1,6 +1,7 @@
 # Electrons:      14
 Momentum Cutoff:  2
 Rs:               1.0
+Do Calculation:   HF
 Do Rings:         T
 Do XRings:        T
 Do Ladders:       T
