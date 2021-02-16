@@ -34,72 +34,26 @@
 !==========================================!
       Select Case (UEGInput%DoCalc)
          Case ('HF')
-            print *, "Doing HF calculation"
-            print *, "Currently not implamented. Exiting"
+            Call Do_HF(UEGInput)
             Stop
    
    
          Case ('MP2')
-            print *, "Doing MP2 calculation"
-            print *, "Currently not implamented. Exiting"
+            Call Do_MP2(UEGInput)
             Stop
    
    
          Case ('CCD')
-            print *, "Doing CCD calculation"
-     
-      !==========================================!
-      !  Now we can allocate the memory and go!  !
-      !==========================================!
-      
-            IAlloc = 0
-            Allocate(T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(1))
-            Allocate(T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(2))
-            Allocate(T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(3))
-            Allocate(X2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(4))
-            Allocate(X2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(5))
-            Allocate(X2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(6))
-            If(Any(IAlloc /= 0)) Stop "Could not allocate in main"
-            Open(7,File='Output',Status="Replace")
-            Close(7)
-      
-      !=====================================================================!
-            Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
-      
-            T2aaaa = X2aaaa
-            T2abab = X2abab
-            T2abba = X2abba
-              
-            Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr, &
-                         UEGInput%DoRing,UEGInput%DoXRing,UEGInput%DoLadder,UEGInput%DoMosaic, &
-                         UEGInput%IRangeRing,UEGInput%IRangeXRing,UEGInput%IRangeLadder,UEGInput%IRangeMosaic, &
-                         UEGInput%IRangeDriverDirect,UEGInput%IRangeDriverExchange,UEGInput%IRangeEnergy,       &
-                         UEGInput%IRangeLinRings,UEGInput%IRangeQuadRings,UEGInput%IRangeDirectRings,UEGInput%IRangeExchangeRings, &
-                         UEGInput%IRangeLinLadders,UEGInput%IRangeQuadLadders,UEGInput%IRangeDirectLadders,  &
-                         UEGInput%IRangeExchangeLadders)     
- 
-      !==============================================!
-      !  Lastly, deallocate memory and exit safely.  !
-      !==============================================!
-      
-            DeAllocate(T2aaaa,    Stat=IAlloc(1))
-            DeAllocate(T2abab,    Stat=IAlloc(2))
-            DeAllocate(T2abba,    Stat=IAlloc(3))
-            DeAllocate(X2aaaa,    Stat=IAlloc(4))
-            DeAllocate(X2abab,    Stat=IAlloc(5))
-            DeAllocate(X2abba,    Stat=IAlloc(6))
-            If(Any(IAlloc /= 0)) Stop "Could not deallocate in main"
-   
-   
+            Call Do_CCD(UEGInput)
+            Stop
+
          Case ('TA-CCD')
-            print *, "Doing twist averaging CCD calculation"
-            print *, "Currently not implamented. Exiting"
+            Call Do_TACCD(UEGInput)
             Stop
    
    
          Case ('cTA-CCD')
-            print *,"Doing connectivity twist averaging CCD calculation"
-            print *, "Currently not implamented. Exiting"
+            Call Do_cTACCD(UEGInput)
             Stop
 
 
@@ -108,7 +62,97 @@
             Stop
 
       End Select
-
       Stop
+      Contains
+         Subroutine Do_HF(UEGInput)
+               use IO
+               type(UEG_Input) :: UEGInput
+   
+               print *, "Doing HF calculation"
+               print *, "Currently not implamented. Exiting"
+               Stop
+         End Subroutine Do_HF
+ 
+ 
+         Subroutine Do_MP2(UEGInput)
+               use IO
+               type(UEG_Input) :: UEGInput
+   
+               print *, "Doing MP2 calculation"
+               print *, "Currently not implamented. Exiting"
+               Stop
+         End Subroutine Do_MP2
+ 
+         Subroutine Do_CCD(UEGInput)
+               use IO
+               type(UEG_Input) :: UEGInput
+ 
+               print *, "Doing CCD calculation"
+        
+         !==========================================!
+         !  Now we can allocate the memory and go!  !
+         !==========================================!
+         
+               IAlloc = 0
+               Allocate(T2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(1))
+               Allocate(T2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(2))
+               Allocate(T2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(3))
+               Allocate(X2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(4))
+               Allocate(X2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(5))
+               Allocate(X2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(6))
+               If(Any(IAlloc /= 0)) Stop "Could not allocate in main"
+               Open(7,File='Output',Status="Replace")
+               Close(7)
+         
+         !=====================================================================!
+               Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
+         
+               T2aaaa = X2aaaa
+               T2abab = X2abab
+               T2abba = X2abba
+                 
+               Call DrvCCD(Eigen,T2aaaa,T2abab,T2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr, &
+                            UEGInput%DoRing,UEGInput%DoXRing,UEGInput%DoLadder,UEGInput%DoMosaic, &
+                            UEGInput%IRangeRing,UEGInput%IRangeXRing,UEGInput%IRangeLadder,UEGInput%IRangeMosaic, &
+                            UEGInput%IRangeDriverDirect,UEGInput%IRangeDriverExchange,UEGInput%IRangeEnergy,       &
+                            UEGInput%IRangeLinRings,UEGInput%IRangeQuadRings,UEGInput%IRangeDirectRings,  &
+                            UEGInput%IRangeExchangeRings, &
+                            UEGInput%IRangeLinLadders,UEGInput%IRangeQuadLadders,UEGInput%IRangeDirectLadders,  &
+                            UEGInput%IRangeExchangeLadders)     
+  
+         !==============================================!
+         !  Lastly, deallocate memory and exit safely.  !
+         !==============================================!
+         
+               DeAllocate(T2aaaa,    Stat=IAlloc(1))
+               DeAllocate(T2abab,    Stat=IAlloc(2))
+               DeAllocate(T2abba,    Stat=IAlloc(3))
+               DeAllocate(X2aaaa,    Stat=IAlloc(4))
+               DeAllocate(X2abab,    Stat=IAlloc(5))
+               DeAllocate(X2abba,    Stat=IAlloc(6))
+               If(Any(IAlloc /= 0)) Stop "Could not deallocate in main"
+ 
+         End Subroutine Do_CCD
+ 
+  
+         Subroutine Do_TACCD(UEGInput)
+!!              use IO
+               type(UEG_Input) :: UEGInput
+   
+               print *, "Doing TA-CCD calculation"
+               print *, "Currently not implamented. Exiting"
+               Stop
+         End Subroutine Do_TACCD
+ 
+ 
+         Subroutine Do_cTACCD(UEGInput)
+!!              use IO
+               type(UEG_Input) :: UEGInput
+   
+               print *, "Doing cTA-CCD calculation"
+               print *, "Currently not implamented. Exiting"
+               Stop
+         End Subroutine Do_cTACCD
+ 
       End Program TermedCC
 
