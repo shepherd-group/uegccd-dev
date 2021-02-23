@@ -253,8 +253,8 @@
 !  Over to James.  !
 !==================!
 
-      Call Init_HEG_dummy(UEG_Inp%MaxKPoint,UEG_Inp%NElectron)
-      UEG_Inp%NAO = nBasis
+      !!Call Init_HEG_dummy(UEG_Inp%MaxKPoint,UEG_Inp%NElectron)
+      !!UEG_Inp%NAO = nBasis
 
 1000  Format('Error: Line number ',I4,' of Input not recognized; ',  &
              'subsequent lines not read.')

@@ -1,6 +1,6 @@
 # Electrons:      14
 Momentum Cutoff:  2
-Rs:               10.0
+Rs:               5.0
 Do Calculation:   CCD
 Do Rings:         T
 Do XRings:        T

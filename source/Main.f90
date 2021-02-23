@@ -58,21 +58,59 @@
 
       Subroutine Do_HF(UEGInput)
             Use IO
+            Use HEG
+            Use Precision
+            Use Constants
             type(UEG_Input) :: UEGInput
    
             print *, "Doing HF calculation"
-            print *, "Currently not implamented. Exiting"
-            Stop
+!!            print *, "Currently not implamented. Exiting"
+
+            Call Init_HEG_dummy(UEGInput%MaxKPoint,UEGInput%NElectron)
+            Call change_rs(UEGInput%Rs) 
+            UEGInput%NAO = nBasis
+            
       End Subroutine Do_HF
  
  
       Subroutine Do_MP2(UEGInput)
-            use IO
-            type(UEG_Input) :: UEGInput
    
+            Use Precision
+            Use IO
+            Use MP2
+            Use CCD
+            Implicit None
+      ! Dimensioning variables
+            type(UEG_Input) :: UEGInput
+      ! Correlated stuff
+            Real (Kind=pr) :: ECorr
+            Real (Kind=pr), Allocatable :: X2aaaa(:,:,:), X2abab(:,:,:), X2abba(:,:,:)
+      ! Error checking variables
+            Integer, Parameter :: NAlloc = 6
+            Integer :: IAlloc(NAlloc)
+            Logical, Parameter :: T = .true., F=.false.
+
             print *, "Doing MP2 calculation"
-            print *, "Currently not implamented. Exiting"
-            Stop
+           !! print *, "Currently not implamented. Exiting"
+
+
+            Call Do_HF(UEGInput)
+      !==========================================!
+      !  Now we can allocate the memory and go!  !
+      !==========================================!
+      
+            IAlloc = 0
+            Allocate(X2aaaa(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(4))
+            Allocate(X2abab(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(5))
+            Allocate(X2abba(UEGInput%NOcc,UEGInput%NOcc,UEGInput%NOcc+1:UEGInput%NAO),  Stat=IAlloc(6))
+            If(Any(IAlloc /= 0)) Stop "Could not allocate in main"
+            Open(7,File='Output',Status="Replace")
+            Close(7)
+      
+      !=====================================================================!
+            
+            Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
+            
       End Subroutine Do_MP2
 
  
@@ -96,7 +134,9 @@
       
  
             print *, "Doing CCD calculation"
-      
+            !!Call Do_HF(UEGInput)
+            Call Do_MP2(UEGInput)
+
       !==========================================!
       !  Now we can allocate the memory and go!  !
       !==========================================!
@@ -113,8 +153,7 @@
             Close(7)
       
       !=====================================================================!
-            Call DrvMBPT(Eigen,X2aaaa,X2abab,X2abba,UEGInput%NOcc,UEGInput%NAO,EHF,ECorr)
-      
+            
             T2aaaa = X2aaaa
             T2abab = X2abab
             T2abba = X2abba
