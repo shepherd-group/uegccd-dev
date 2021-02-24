@@ -1,7 +1,7 @@
 # Electrons:      14
 Momentum Cutoff:  2
-Rs:               5.0
-Do Calculation:   CCD
+Rs:               1.0
+Do Calculation:   MP2
 Do Rings:         T
 Do XRings:        T
 Do Ladders:       T
