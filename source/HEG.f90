@@ -230,9 +230,12 @@ contains
             do l2=-cell,cell
                 do l3=-cell,cell
                     M=M+1
-                    G1(M)%n(1)=l1
+                    G1(M)%n(1)=l1        !used to calcualte the orbital quantum numbers coordinates            
                     G1(M)%n(2)=l2
                     G1(M)%n(3)=l3
+                   !! G1(M)%n_tw(1)=l1+ktwist_tmp(1) !orbitals offest by twist A
+                   !! G1(M)%n_tw(2)=l2+ktwist_tmp(2)
+                   !! G1(M)%n_tw(3)=l3+ktwist_tmp(3)
                     G1(M)%n2=l1**2+l2**2+l3**2
                     G1(M)%k2=(l1**2+l2**2+l3**2)*(2*pi/L)**2
                     if (G1(M)%n2 .gt. ecut) then 
@@ -275,9 +278,9 @@ contains
           !  kvec(l1,1)=G1(l1)%n(1)*(2.0_pr*pi/L)
           !  kvec(l1,2)=G1(l1)%n(2)*(2.0_pr*pi/L)
           !  kvec(l1,3)=G1(l1)%n(3)*(2.0_pr*pi/L)
-            kvec(l1,1)=G1(l1)%n(1)*(2.0_pr*pi/L)+ktwist_tmp(1)
-            kvec(l1,2)=G1(l1)%n(2)*(2.0_pr*pi/L)+ktwist_tmp(2)
-            kvec(l1,3)=G1(l1)%n(3)*(2.0_pr*pi/L)+ktwist_tmp(3)
+            kvec(l1,1)=(G1(l1)%n(1)+ktwist_tmp(1))*(2.0_pr*pi/L)
+            kvec(l1,2)=(G1(l1)%n(2)+ktwist_tmp(2))*(2.0_pr*pi/L)
+            kvec(l1,3)=(G1(l1)%n(3)+ktwist_tmp(3))*(2.0_pr*pi/L)
             nvec(l1,1)=G1(l1)%n(1)
             nvec(l1,2)=G1(l1)%n(2)
             nvec(l1,3)=G1(l1)%n(3)

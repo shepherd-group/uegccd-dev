@@ -17,7 +17,9 @@
       Real (Kind=pr), Intent(Out) :: ECorr
       Real (Kind=pr) :: V_ijab, V_ijba, Denom
       Integer :: I, J, A, B
-
+     
+      !!print *, Fock, ESCF, ECorr
+     
 !==========================================!
 !  This does the MP2 calculation.  Glory!  !
 !==========================================!
