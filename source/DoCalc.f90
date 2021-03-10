@@ -11,9 +11,10 @@
               type(UEG_Input) :: UEGInput
      
               print *, "Doing HF calculation"
+              print *, "This is the twist angle ", UEGInput%TAvec
 !!            print *, "Currently not implamented. Exiting"
   
-              Call Init_HEG_dummy(UEGInput%MaxKPoint,UEGInput%NElectron)
+              Call Init_HEG_dummy(UEGInput%MaxKPoint,UEGInput%NElectron,UEGInput%TAvec)
               Call change_rs(UEGInput%Rs) 
               UEGInput%NAO = nBasis
               
@@ -90,7 +91,6 @@
         
    
               print *, "Doing CCD calculation"
-  
         !==========================================!
         !  Now we can allocate the memory and go!  !
         !==========================================!

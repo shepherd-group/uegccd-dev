@@ -32,6 +32,7 @@
         Integer :: IRangeExchangeLadders
         Integer :: NElectron              !Number of electrons in the system
         Integer :: MaxKPoint
+        Real (Kind=pr) :: TAvec(3)   !twist angles from input as a vector
         Character(len = 20) :: DoCalc  !Input to choose which calc to run
    end type UEG_input
 
@@ -39,8 +40,8 @@
       Subroutine ReadInput(UEG_Inp)
       Implicit None
       !!Integer, Parameteonrams = 22
-      Integer, Parameter    :: NParams = 23
-      Integer, Parameter    :: LName   = 19
+      Integer, Parameter    :: NParams = 24
+      Integer, Parameter    :: LName   = 20
       Integer, Parameter    :: LLine   = 79
       Logical               :: Error, Exists
       Character (len=5)     :: FormatString
@@ -101,6 +102,7 @@
       ParamName = (/'# Electrons        ',    &
                     'Momentum Cutoff    ',    &
                     'Rs                 ',    &
+                    'Twist Angle        ',    & !sets coordinates for twist angle 
                     'Do Calculation     ',    & ! This sets the calculation type
                     'Do Rings           ',    &
                     'Do XRings          ',    &
@@ -159,6 +161,9 @@
 
         Case ('Rs')
          Read(Value,*) UEG_Inp%Rs
+
+        Case ('Twist Angle')
+         Read(Value,*) UEG_Inp%TAvec 
 
         Case ('Do Calculation')
          Read(Value,*)UEG_Inp%DoCalc

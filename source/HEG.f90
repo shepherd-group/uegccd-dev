@@ -32,15 +32,16 @@ public :: eigen, ERI, init_HEG, FindIndex, nBasis, EHF, init_HEG_dummy, change_r
 
 contains
 
-    subroutine init_HEG(ecut_tmp,Nel_tmp,rs_tmp)
+    subroutine init_HEG(ecut_tmp,Nel_tmp,rs_tmp, TwstA_tmp)
         
         integer, intent(in) :: nEl_tmp, ecut_tmp
         real(pr), intent(in) :: rs_tmp
+        real(pr), intent(in) :: TwstA_tmp(3)
 
         call set_up_data(ecut_tmp,Nel_tmp,rs_tmp)
         call print_shells(10) 
         call setup
-        call setup_basis
+        call setup_basis(TwstA_tmp)
 
     end subroutine
 
@@ -196,7 +197,7 @@ contains
 
     end function
 
-    subroutine setup_basis
+    subroutine setup_basis(ktwist_tmp)
 
         type (basis_set), allocatable :: G1(:)
         type (basis_set) :: G1_temp
@@ -204,6 +205,9 @@ contains
         integer :: l1, l2, l3
         integer :: M
         real(pr) :: qvec(3)
+        real(pr), intent(in) :: ktwist_tmp(3)
+
+        print *, "This is the twist angle ", ktwist_tmp
 
         write(60,*) ""
         write(60,*) "-----------------------------------------------------------"
@@ -268,9 +272,12 @@ contains
         ! Form the array of k vectors (scaled)
         ! and n vectors (integers)
         do l1=1,nbasis 
-            kvec(l1,1)=G1(l1)%n(1)*(2.0_pr*pi/L)
-            kvec(l1,2)=G1(l1)%n(2)*(2.0_pr*pi/L)
-            kvec(l1,3)=G1(l1)%n(3)*(2.0_pr*pi/L)
+          !  kvec(l1,1)=G1(l1)%n(1)*(2.0_pr*pi/L)
+          !  kvec(l1,2)=G1(l1)%n(2)*(2.0_pr*pi/L)
+          !  kvec(l1,3)=G1(l1)%n(3)*(2.0_pr*pi/L)
+            kvec(l1,1)=G1(l1)%n(1)*(2.0_pr*pi/L)+ktwist_tmp(1)
+            kvec(l1,2)=G1(l1)%n(2)*(2.0_pr*pi/L)+ktwist_tmp(2)
+            kvec(l1,3)=G1(l1)%n(3)*(2.0_pr*pi/L)+ktwist_tmp(3)
             nvec(l1,1)=G1(l1)%n(1)
             nvec(l1,2)=G1(l1)%n(2)
             nvec(l1,3)=G1(l1)%n(3)
@@ -447,13 +454,14 @@ contains
 !    end function
 
     
-    subroutine init_HEG_dummy(ecut_tmp,Nel_tmp)
+    subroutine init_HEG_dummy(ecut_tmp,Nel_tmp, TwsA_tmp)
     ! This is a dummy routine ahead of an rs scan version of this code
     ! so rs is initalised as one (because scale factors are simpler)
         
         integer, intent(in) :: nEl_tmp, ecut_tmp
+        Real(pr), intent(in) :: TwsA_tmp(3)
 
-        call init_HEG(ecut_tmp,Nel_tmp,1.0_pr)
+        call init_HEG(ecut_tmp,Nel_tmp,1.0_pr, TwsA_tmp)
 
     end subroutine
 
