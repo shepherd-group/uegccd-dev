@@ -14,7 +14,9 @@ type basis_set
     integer :: sorted_index
     real(pr) :: k2
     integer :: n2
+    real(pr) :: n2_tw  !!"tw" mean offset by twist angle
     integer :: n(3)
+    real(pr) :: n_tw(3)
     integer :: ms
 end type basis_set
 
@@ -233,11 +235,13 @@ contains
                     G1(M)%n(1)=l1        !used to calcualte the orbital quantum numbers coordinates            
                     G1(M)%n(2)=l2
                     G1(M)%n(3)=l3
-                   !! G1(M)%n_tw(1)=l1+ktwist_tmp(1) !orbitals offest by twist A
-                   !! G1(M)%n_tw(2)=l2+ktwist_tmp(2)
-                   !! G1(M)%n_tw(3)=l3+ktwist_tmp(3)
+                    G1(M)%n_tw(1)=l1+ktwist_tmp(1) !orbitals offest by twist A
+                    G1(M)%n_tw(2)=l2+ktwist_tmp(2)
+                    G1(M)%n_tw(3)=l3+ktwist_tmp(3)
                     G1(M)%n2=l1**2+l2**2+l3**2
+                    G1(M)%n2_tw=(l1+ktwist_tmp(1))**2+(l2+ktwist_tmp(2))**2+(l3+ktwist_tmp(3))**2
                     G1(M)%k2=(l1**2+l2**2+l3**2)*(2*pi/L)**2
+                    !! G1(M)%k2_tw=((l1+ktwist_tmp(1))**2+(l2+ktwist_tmp(2))**2+(l3+ktwist_tmp(3))**2)*(2*pi/L)**2
                     if (G1(M)%n2 .gt. ecut) then 
                         M=M-1 ! By construction G1(M+1) exists but is never used (caution!)
                     endif
@@ -253,7 +257,7 @@ contains
         do
             swapped=.false.
             do l1=2,nBasis
-                if (G1(l1)%n2.lt.G1(l1-1)%n2) then
+                if (G1(l1)%n2_tw.lt.G1(l1-1)%n2_tw) then  !set up to sort twist angle basis set
                     G1_temp=G1(l1-1)
                     G1(l1-1)=G1(l1)
                     G1(l1)=G1_temp

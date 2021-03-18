@@ -1,7 +1,7 @@
 # Electrons:      14
 Momentum Cutoff:  2
 Rs:               1.0
-Twist Angle:      0.0 0.0 0.0
+Twist Angle:      0.1 0.1 0.1
 Do Calculation:   CCD
 Do Rings:         T
 Do XRings:        T
