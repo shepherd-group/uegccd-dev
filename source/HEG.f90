@@ -27,6 +27,7 @@ integer :: nBasis
 real(pr), allocatable :: eigen(:) 
 real(pr), allocatable :: kvec(:,:)
 integer, allocatable :: nvec(:,:)
+integer, allocatable :: nvec_tw(:,:)
 integer, allocatable :: kPointToBasisFn(:,:,:)
 
 private
@@ -288,6 +289,9 @@ contains
             nvec(l1,1)=G1(l1)%n(1)
             nvec(l1,2)=G1(l1)%n(2)
             nvec(l1,3)=G1(l1)%n(3)
+            nvec_tw(l1,1)=G1(l1)%n_tw(1)
+            nvec_tw(l1,2)=G1(l1)%n_tw(2)
+            nvec_tw(l1,3)=G1(l1)%n_tw(3)
         enddo
 
         ! Form eigenvector array
@@ -573,7 +577,8 @@ contains
             ERI=-100.0_pr
             return
         endif
-        qvec=-nvec(i,:)+nvec(a,:)
+        !qvec=-nvec(i,:)+nvec(a,:)
+        qvec=-nvec_tw(i,:)+nvec_tw(a,:)
         if ((qvec(1).eq.0).and.(qvec(2).eq.0).and.(qvec(3).eq.0)) then
             select case (flag)
                 case (0) ! normal
